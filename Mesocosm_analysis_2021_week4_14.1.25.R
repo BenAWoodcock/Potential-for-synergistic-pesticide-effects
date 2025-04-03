@@ -75,22 +75,20 @@ plot(sim_res)
 summary(gm1)
 emmeans(gm1, ~ Treatment) 
 
+
 #--------------------------------------------------------------------------------------------
 #Model for abundance and mass community metrics from the mesocosms
 #----------------------------------------------------------------------------------------
 
 #Aphid abundance  (wingless adults)
-gm1 <-glmer(Total__Aphis_Fabae  ~ Treatment + Sampling_week + Sampling_week*Treatment  +(1|BLOCK/Mesocosm), family=poisson, data=Main_data)
+gm1 <-glmer(Wingless_Aphis_Fabae ~ Treatment + Sampling_week + Sampling_week*Treatment  +(1|BLOCK/Mesocosm), family=poisson, data=Main_data)
 Anova(gm1, type = "III")  # Type III analysis of fixed effects, using 'car' package, used for non-normal models
 #drop1(gm1,test="user",sumFun=KRSumFun)   # using F tests  with Type III analysis - model norm
 sim_res <- simulateResiduals(fittedModel = gm1)  #  DHARMa tests of goodness of fit
-plot(sim_res) # Not perfect but vey close.  Borderline KS deviation test.  Otherwise aceptable  (note fit was not improved when a neg. bin distribution was applied)
-summary(gm1)
+plot(sim_res) # some quantile issues but accepatable
 emmeans(gm1, ~ Sampling_week*Treatment) 
 
-
-
-ggplot(data=Main_data, aes(y=log(Total__Aphis_Fabae+1), x=interaction(Sampling_week, Treatment), fill=Treatment)) +  # Color by treatment
+ggplot(data=Main_data, aes(y=log(Wingless_Aphis_Fabae+1), x=interaction(Sampling_week, Treatment), fill=Treatment)) +  # Color by treatment
   geom_boxplot() +
   theme_bw()+   #  white background
   labs(
@@ -108,18 +106,17 @@ ggplot(data=Main_data, aes(y=log(Total__Aphis_Fabae+1), x=interaction(Sampling_w
 
 # test of synergism for aphid abundance
 # Azoxyxystrobin x Cypermethrin
-
-gm1 <-glmer(Total__Aphis_Fabae  ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Cy_Az)
+gm1 <-glmer(Wingless_Aphis_Fabae ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Cy_Az)
 Anova(gm1, type = "III") 
 summary(gm1)
 
 # Cypermethrin X prochloraz
-gm1 <-glmer(Total__Aphis_Fabae  ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Cy_Pr)
+gm1 <-glmer(Wingless_Aphis_Fabae ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Cy_Pr)
 Anova(gm1, type = "III") 
 summary(gm1)
 
 #Prochloraz X Azoxystroin
-gm1 <-glmer(Total__Aphis_Fabae  ~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Pr_Az)
+gm1 <-glmer(Wingless_Aphis_Fabae~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Pr_Az)
 Anova(gm1, type = "III") 
 summary(gm1)
 
