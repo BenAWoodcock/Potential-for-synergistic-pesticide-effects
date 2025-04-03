@@ -41,6 +41,19 @@ Main_data$Treatment <- factor(Main_data$Treatment, levels = c("Cont.", "Cy.", "A
 
 
 
+#  Subsets of data for tests of synergisms based on the principal of response additivity assessed by testing linear interaction effect 
+#  Slinker, B.K. (1998) The Statistics of Synergism. Journal of Molecular and Cellular Cardiology, 30, 723-731.
+
+web_metrics$AZO_0.5<-as.factor(web_metrics$AZO_0.5)	#   Where AZO dicatates the presence or absence of azoxystrobin
+web_metrics$PCZ_0.5<-as.factor(web_metrics$PCZ_0.5)	#   Where PCZ dicatates the presence or absence of prochloraz
+web_metrics$CYP_0.5<-as.factor(web_metrics$CYP_0.5)	#   Where CYP dicatates the presence or absence of cypermethrin
+# We will check for synergisms only in the final week
+Main_data_W4<-Main_data %>% filter(Sampling_week %in% c("W4"))
+
+Main_data_W4_Cy_Az<- Main_data_W4 %>% filter(Treatment %in% c("Cont.", "Cy.", "Az.","Cy.X.Az"))
+Main_data_W4_Cy_Pr<- Main_data_W4 %>% filter(Treatment %in% c("Cont.", "Cy.", "Pr.","Cy.X.Pr"))
+Main_data_W4_Pr_Az<- Main_data_W4 %>% filter(Treatment %in% c("Cont.", "Pr.", "Az.","Pr.X.Az"))
+
 #-----------------------------------------------
 # Summary model structure
 
@@ -63,7 +76,7 @@ summary(gm1)
 emmeans(gm1, ~ Treatment) 
 
 #--------------------------------------------------------------------------------------------
-#Model for abudnaucne and mass community metrics from the mesocosms
+#Model for abundance and mass community metrics from the mesocosms
 #----------------------------------------------------------------------------------------
 
 #Aphid abundance  (wingless adults)
@@ -74,6 +87,8 @@ sim_res <- simulateResiduals(fittedModel = gm1)  #  DHARMa tests of goodness of 
 plot(sim_res) # Not perfect but vey close.  Borderline KS deviation test.  Otherwise aceptable  (note fit was not improved when a neg. bin distribution was applied)
 summary(gm1)
 emmeans(gm1, ~ Sampling_week*Treatment) 
+
+
 
 ggplot(data=Main_data, aes(y=log(Total__Aphis_Fabae+1), x=interaction(Sampling_week, Treatment), fill=Treatment)) +  # Color by treatment
   geom_boxplot() +
@@ -91,7 +106,22 @@ ggplot(data=Main_data, aes(y=log(Total__Aphis_Fabae+1), x=interaction(Sampling_w
   )        
 
 
+# test of synergism for aphid abundance
+# Azoxyxystrobin x Cypermethrin
 
+gm1 <-glmer(Total__Aphis_Fabae  ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Cy_Az)
+Anova(gm1, type = "III") 
+summary(gm1)
+
+# Cypermethrin X prochloraz
+gm1 <-glmer(Total__Aphis_Fabae  ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Cy_Pr)
+Anova(gm1, type = "III") 
+summary(gm1)
+
+#Prochloraz X Azoxystroin
+gm1 <-glmer(Total__Aphis_Fabae  ~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK), family=poisson, data=Main_data_W4_Pr_Az)
+Anova(gm1, type = "III") 
+summary(gm1)
 
 
 #-----------------------------------------------------------------
@@ -115,6 +145,10 @@ summary(gm1)
 emmeans(gm1, ~ Sampling_week*Treatment) 
 
 
+
+
+
+
 ggplot(data=Main_data, aes(y=log(Ladybirds+1), x=interaction(Sampling_week, Treatment), fill=Treatment)) +  # Color by treatment
   geom_boxplot() +
   theme_bw()+   #  white background
@@ -130,6 +164,18 @@ ggplot(data=Main_data, aes(y=log(Ladybirds+1), x=interaction(Sampling_week, Trea
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )      
 
+# test of synergism for ladybird abundance
+# cypermethrin X azoxystrobin
+gm1 <-glmmTMB(Ladybirds  ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), family=nbinom2, data=Main_data_W4_Cy_Az)
+Anova(gm1, type = "III") 
+
+# Cypermethrin X prochloraz
+gm1 <-glmmTMB(Ladybirds  ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), family=nbinom2, data=Main_data_W4_Cy_Pr)
+Anova(gm1, type = "III") 
+
+#Prochloraz X Azoxystroin
+gm1 <-glmmTMB(Ladybirds  ~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK), family=nbinom2, data=Main_data_W4_Pr_Az)
+Anova(gm1, type = "III") 
 
 
 #--------------------------------------------------------------------------------------
@@ -162,7 +208,7 @@ ggplot(data=Main_data, aes(y=log(sum_det_mass_mg+1), x=Sampling_week, fill=Sampl
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )    
 
-
+# no test for synergism as no overal treatment effect
 
 #--------------------------------------------------------------------------------------
 # herbivore biomass
@@ -193,6 +239,21 @@ ggplot(data=Main_data, aes(y=log(sum_herb_mass_mg+1), x=interaction(Sampling_wee
     axis.text = element_text(size = 12),                      # Adjust axis text size
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )   
+
+
+# test of synergism for herbivore mass
+# cypermethrin X azoxystrobin
+gm1 <-lmer(log(sum_herb_mass_mg+1)  ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), data=Main_data_W4_Cy_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)
+
+# Cypermethrin X prochloraz
+gm1 <-lmer(log(sum_herb_mass_mg+1)  ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), data=Main_data_W4_Cy_Pr)
+drop1(gm1,test="user",sumFun=KRSumFun)
+
+#Prochloraz X Azoxystroin
+gm1 <-lmer(log(sum_herb_mass_mg+1)  ~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK),data=Main_data_W4_Pr_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)
+
 
 
 #--------------------------------------------------------------------------------------
@@ -226,50 +287,19 @@ ggplot(data=Main_data, aes(y=log(sum_pred_mass_mg+1), x=interaction(Sampling_wee
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )   
 
-######################################################################################
-# synergism for abundance and Mass tests
 
-#  These represent the  metrics from above tests with some evidence of synergism (e.g. a
-# significant treatment effect).  #  Predicted and observed values for each of these metrics were derived for each
-# of the five replicate blocks for week 4 (see paper for description).   The difference between
-# the observed and predicted(under the assumption of additivity) were assessed using a t test. 
-# A significant difference indiactes synergism or antagonism rather than additive effects. 
+# test of synergism for predator mass
+# cypermethrin X azoxystrobin
+gm1 <-lmer(log(sum_pred_mass_mg+1)  ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), data=Main_data_W4_Cy_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)
 
-----------------------------------------------------------
-  
-  
-  syn_N_mas<-read.csv("Synergism_obs_pred_values_NandMass.csv")
-head(syn_N_mas)
+# Cypermethrin X prochloraz
+gm1 <-lmer(log(sum_pred_mass_mg+1)  ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), data=Main_data_W4_Cy_Pr)
+drop1(gm1,test="user",sumFun=KRSumFun)
 
-
-# W4  Cy+az
-syn_N_mas_W4_Cy_Az<- syn_N_mas %>% filter(Treatment  == "Cy.X.Az")
-t.test(syn_N_mas_W4_Cy_Az$Total__Aphis_Fabae, syn_N_mas_W4_Cy_Az$Pred_Total__Aphis_Fabae) 
-t.test(syn_N_mas_W4_Cy_Az$Ladybirds, syn_N_mas_W4_Cy_Az$Pred_Ladybirds) 
-t.test(syn_N_mas_W4_Cy_Az$sum_herb_mass_mg, syn_N_mas_W4_Cy_Az$Pred_sum_herb_mass_mg) 
-t.test(syn_N_mas_W4_Cy_Az$sum_pred_mass_mg, syn_N_mas_W4_Cy_Az$Pred_sum_pred_mass_mg) 
-
-
-#-------------
-
-# W4  Cy+Pr
-syn_N_mas_W4_Cy_Pr<- syn_N_mas %>% filter(Treatment  == "Cy.X.Pr")
-t.test(syn_N_mas_W4_Cy_Pr$Total__Aphis_Fabae, syn_N_mas_W4_Cy_Pr$Pred_Total__Aphis_Fabae) 
-t.test(syn_N_mas_W4_Cy_Pr$Ladybirds, syn_N_mas_W4_Cy_Pr$Pred_Ladybirds) 
-t.test(syn_N_mas_W4_Cy_Pr$sum_herb_mass_mg, syn_N_mas_W4_Cy_Pr$Pred_sum_herb_mass_mg) 
-t.test(syn_N_mas_W4_Cy_Pr$sum_pred_mass_mg, syn_N_mas_W4_Cy_Pr$Pred_sum_pred_mass_mg)
-
-
-#---------------------------------------------
-# W1  Pr.X.Az
-
-# W4  Pr.X.Az
-syn_N_mas_W4_Pr_Az<- syn_N_mas %>% filter(Treatment  == "Pr.X.Az")
-t.test(syn_N_mas_W4_Pr_Az$Total__Aphis_Fabae, syn_N_mas_W4_Pr_Az$Pred_Total__Aphis_Fabae) 
-t.test(syn_N_mas_W4_Pr_Az$Ladybirds, syn_N_mas_W4_Pr_Az$Pred_Ladybirds) 
-t.test(syn_N_mas_W4_Pr_Az$sum_herb_mass_mg, syn_N_mas_W4_Pr_Az$Pred_sum_herb_mass_mg) 
-t.test(syn_N_mas_W4_Pr_Az$sum_pred_mass_mg, syn_N_mas_W4_Pr_Az$Pred_sum_pred_mass_mg)
-
+#Prochloraz X Azoxystroin
+gm1 <-lmer(log(sum_pred_mass_mg+1)  ~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK),  data=Main_data_W4_Pr_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)
 
 ##############################################################################
 earthworms<-read.csv("R_earthworms_week8.csv")
@@ -311,7 +341,7 @@ ggplot(data=earthworms, aes(y=Coccons, x=Treatment, fill=Treatment)) +  # Color 
   )      
 
 
-
+# no test for synergism as no overal treatment effect
 
 ##############################################################################
 decomp<-read.csv("R_Decomposition.csv")   #   bait lamina decomposition assessments for week 4
@@ -344,6 +374,7 @@ ggplot(data=decomp, aes(y=Total_average_number_removed, x=Treatment, fill=Treatm
   )
 
 
+# no test for synergism as no overal treatment effect
 
 #####################################################################################
 
@@ -515,6 +546,17 @@ head(web_metrics)
 web_metrics$Treatment <- factor(web_metrics$Treatment, levels = c("Cont.", "Cy.", "Az.", "Pr.", 
                                                                   "Az.X.Pr", "Cy.X.Az", "Cy.X.Pr"))
 
+
+
+#  Subsets of data for tests of synergisms based on the principal of response additivity assessed by testing linear interaction effect 
+#  Slinker, B.K. (1998) The Statistics of Synergism. Journal of Molecular and Cellular Cardiology, 30, 723-731.
+web_metrics$AZO_0.5<-as.factor(web_metrics$AZO_0.5)	#   Where AZO dicatates the presence or absence of azoxystrobin
+web_metrics$PCZ_0.5<-as.factor(web_metrics$PCZ_0.5)		#   Where PCZ dicatates the presence or absence of prochloraz
+web_metrics$CYP_0.5<-as.factor(web_metrics$CYP_0.5)	#   Where CYP dicatates the presence or absence of cypermethrin
+web_metrics_Cy_Az<- web_metrics %>% filter(Treatment %in% c("Cont.", "Cy.", "Az.","Cy.X.Az"))
+web_metrics_Cy_Pr<- web_metrics %>% filter(Treatment %in% c("Cont.", "Cy.", "Pr.","Cy.X.Pr"))
+web_metrics_Pr_Az<- web_metrics %>% filter(Treatment %in% c("Cont.", "Pr.", "Az.","Az.X.Pr"))
+  
 # Check the new levels
 levels(web_metrics$Treatment)
 
@@ -557,7 +599,10 @@ ggplot(data=web_metrics, aes(y=SpeciesRich, x=Treatment, fill=Treatment)) +  # C
   )                                         
 
 
+# No tests for synergisms undertaken as no overal treatment effect identified
+  
 
+#-----------------------------------------------------------------------------------------------------
 #Connectance
 gm1 <-lmer(Connectacne~ Treatment  +(1|BLOCK),  data=web_metrics)
 drop1(gm1,test="user",sumFun=KRSumFun)   # using F tests  with Type III analysis - model normal
@@ -583,8 +628,20 @@ ggplot(data=web_metrics, aes(y=Connectacne, x=Treatment, fill=Treatment)) +  # C
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )                                         
 
+# test of synergism for connectance in food web
+# Azoxyxystrobin x Cypermethrin
+gm1 <-lmer(Connectacne~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5 +(1|BLOCK),  data=web_metrics_Cy_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)   
 
+# Cypermethrin X prochloraz
+gm1 <-lmer(Connectacne~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5 +(1|BLOCK),  data=web_metrics_Cy_Pr)
+drop1(gm1,test="user",sumFun=KRSumFun)  
 
+#Prochloraz X Azoxystroin
+gm1 <-lmer(Connectacne~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5 +(1|BLOCK),  data=web_metrics_Pr_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)   
+
+#----------------------------------------------------------------------
 # Convex hull - The points and area of the minimum convex hull (a polygon in log10-transformed numerical abundance versus log10-transformed body mass space) that bounds all the species
 gm1 <-lmer(Convex_hull_area~ Treatment  +(1|BLOCK),  data=web_metrics)
 drop1(gm1,test="user",sumFun=KRSumFun)   # using F tests  with Type III analysis - model norm
@@ -620,7 +677,21 @@ ggplot(data=web_metrics, aes(y=Convex_hull_area, x=Treatment, fill=Treatment)) +
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )                                         
 
+# test for synergism for convex hull area
+# Azoxyxystrobin x Cypermethrin
+gm1 <-lmer(Convex_hull_area~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5 +(1|BLOCK),  data=web_metrics_Cy_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)   
 
+# Cypermethrin X prochloraz
+gm1 <-lmer(Convex_hull_area~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5 +(1|BLOCK),  data=web_metrics_Cy_Pr)
+drop1(gm1,test="user",sumFun=KRSumFun)  
+
+#Prochloraz X Azoxystroin
+gm1 <-lmer(Convex_hull_area~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5 +(1|BLOCK),  data=web_metrics_Pr_Az)
+drop1(gm1,test="user",sumFun=KRSumFun)   
+
+  
+#----------------------------------------------------------------
 # allom_degree_dist_slope
 # describe how species numbers of trophic links scale with their log-transformed body masses.
 gm1 <-lmer(allom_degree_dist_slope~ Treatment  +(1|BLOCK),  data=web_metrics)
@@ -645,25 +716,6 @@ ggplot(data=web_metrics, aes(y=allom_degree_dist_slope, x=Treatment, fill=Treatm
     axis.title = element_text(size = 16)                      # Adjust axis title size
   )                                         
 
-
-
-#---------------------------------------------------------------------------------------
-# tests for synergism between Az and Cy for nodes (SR), connectance and convex hull area
-
-#  These represent the  metrics from above tests with some evidence of synergism (e.g. a
-# significant treatment effect).  #  Predicted and observed values for each of these metrics were derived for each
-# of the five replicate blocks for week 4 (see paper for description).   The difference between
-# the observed and predicted(under the assumption of additivity) were assessed using a t test. 
-# A significant difference indicates synergism or antagonism rather than additive effects. 
-syn_az_cy<-read.csv("Synergism_obs_pred_values_Web_Az_Cy.csv")
-
-# Species richness
-t.test(syn_az_cy$SR_predicted, syn_az_cy$SR_observed) 
-
-# Connectance
-t.test(syn_az_cy$C_predicted, syn_az_cy$C_observed) 
-
-# convex hull area
-t.test(syn_az_cy$CHA_predicted, syn_az_cy$CHA_observed) 
+  # note no overal significant treatment effect so no test for synergism
 
 
