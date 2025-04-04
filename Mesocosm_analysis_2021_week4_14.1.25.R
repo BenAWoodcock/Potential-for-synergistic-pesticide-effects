@@ -63,7 +63,7 @@ Main_data_W4_Pr_Az<- Main_data_W4 %>% filter(Treatment %in% c("Cont.", "Pr.", "A
 # package, for exampel lme4 for poisson and binomial, but Car using the glmmTMB function for negative binomial.
 # Models including data measures at weeks 1,2 and 4 
 
-gm1 <-glmer(Total__Aphis_Fabae  ~ Treatment + Sampling_week + Sampling_week*Treatment  +(1|BLOCK/Mesocosm), family=poisson, data=Main_data)
+gm1 <-glmer( METRIC~ Treatment + Sampling_week + Sampling_week*Treatment  +(1|BLOCK/Mesocosm), family=poisson, data=Main_data)
 # models which have  single time point estiamte, e.g. earthworm coccon production is measured once in week 8
 gm1 <-glmer(Coccons ~ Treatment  +(1|BLOCK), family=poisson, data=earthworms)
 # model simplification is by deletion of lease sig effects
@@ -211,51 +211,6 @@ ggplot(data=Main_data, aes(y=log(sum_det_mass_mg+1), x=Sampling_week, fill=Sampl
   )    
 
 # no test for synergism as no overal treatment effect
-
-#--------------------------------------------------------------------------------------
-# herbivore biomass
-gm1 <-lmer(sum_herb_mass_mg~ Treatment + Sampling_week +(1|BLOCK/Mesocosm), data=Main_data)
-drop1(gm1,test="user",sumFun=KRSumFun)   # using F tests  with Type III analysis - model norm
-sim_res <- simulateResiduals(fittedModel = gm1)  #  DHARMa tests of goodness of fit
-plot(sim_res)    # very strong quantile deviations detected
-# try a transformation on the response log(N+1)
-gm1 <-lmer(log(sum_herb_mass_mg+1)~ Treatment + Sampling_week + Treatment*Sampling_week +  (1|BLOCK/Mesocosm), data=Main_data)
-drop1(gm1,test="user",sumFun=KRSumFun) 
-sim_res <- simulateResiduals(fittedModel = gm1)  #  DHARMa tests of goodness of fit
-plot(sim_res)    # Measures of model fit all look fine now
-summary(gm1)
-emmeans(gm1, ~ Treatment*Sampling_week) 
-emmeans(gm1, ~ Treatment) 
-
-ggplot(data=Main_data, aes(y=log(sum_herb_mass_mg+1), x=interaction(Sampling_week, Treatment), fill=Treatment)) +  # Color by treatment
-  geom_boxplot() +
-  theme_bw()+   #  white background
-  labs(
-    x = "Treatment",                                           # X-axis legend
-    y = "Mass (log mg)",                                        # Y-axis legend
-    fill = "Treatment"                                    # Legend title
-  )  +
-  theme(
-    panel.border = element_rect(color = "black", fill = NA),   # Solid axes lines
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1) , # Rotate x-axis text
-    axis.text = element_text(size = 12),                      # Adjust axis text size
-    axis.title = element_text(size = 16)                      # Adjust axis title size
-  )   
-
-
-# test of synergism for herbivore mass
-# cypermethrin X azoxystrobin
-gm1 <-lmer(log(sum_herb_mass_mg+1)  ~ AZO_0.5+ CYP_0.5 + AZO_0.5*CYP_0.5  +(1|BLOCK), data=Main_data_W4_Cy_Az)
-drop1(gm1,test="user",sumFun=KRSumFun)
-
-# Cypermethrin X prochloraz
-gm1 <-lmer(log(sum_herb_mass_mg+1)  ~ PCZ_0.5+ CYP_0.5 + PCZ_0.5*CYP_0.5  +(1|BLOCK), data=Main_data_W4_Cy_Pr)
-drop1(gm1,test="user",sumFun=KRSumFun)
-
-#Prochloraz X Azoxystroin
-gm1 <-lmer(log(sum_herb_mass_mg+1)  ~ AZO_0.5+ PCZ_0.5 + AZO_0.5*PCZ_0.5  +(1|BLOCK),data=Main_data_W4_Pr_Az)
-drop1(gm1,test="user",sumFun=KRSumFun)
-
 
 
 #--------------------------------------------------------------------------------------
